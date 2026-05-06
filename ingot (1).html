@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingot Report Generator</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; background: #fdf8ec; padding: 16px; color: #333; margin:0; }
+        .container { max-width: 720px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .back-link { display:inline-block; margin-bottom:12px; font-size:13px; color:#666; text-decoration:none; }
+        .back-link:hover { color:#222; }
+        .dept-badge { display:block; text-align:center; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#c9a830; margin-bottom:4px; }
+        h2 { text-align:center; color:#7a5c00; margin:0 0 16px; }
+        .section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:#7a5c00; background:#fdf6dc; border-left:3px solid #c9a830; padding:5px 10px; margin:18px 0 10px; }
+        .footer-info { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+        .footer-info input, .footer-info select { flex:1; min-width:140px; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:14px; }
+        .table-wrap { overflow-x:auto; margin-bottom:4px; -webkit-overflow-scrolling:touch; }
+        table { border-collapse:collapse; width:100%; }
+        th, td { border:1px solid #ddd; padding:7px 8px; text-align:center; white-space:nowrap; font-size:13px; }
+        th { background:#fdf6dc; color:#7a5c00; font-size:12px; font-weight:700; }
+        td.row-label { text-align:left; font-weight:600; font-size:12px; background:#fafaf8; color:#555; min-width:130px; white-space:normal; }
+        select.phase-sel { width:100%; min-width:88px; padding:4px 2px; border:1px solid #ccc; border-radius:3px; font-size:11px; background:#fff; }
+        input.ingot-inp { width:52px; padding:4px; border:1px solid #ccc; border-radius:3px; font-size:13px; text-align:center; }
+        input.cd-inp { width:70px; padding:4px; border:1px solid #ccc; border-radius:3px; font-size:12px; text-align:center; }
+        #costSection { display:none; }
+        .no-active { font-size:12px; color:#aaa; font-style:italic; margin:4px 0 12px; }
+        .bottom-grid { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+        .bottom-grid label { font-size:12px; font-weight:700; color:#7a5c00; display:block; margin-bottom:3px; text-transform:uppercase; letter-spacing:.04em; }
+        .bottom-grid textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-family:inherit; font-size:13px; resize:vertical; min-height:44px; }
+        .btn-copy { width:100%; padding:12px; background:#c9a830; color:white; border:none; border-radius:4px; cursor:pointer; font-size:15px; font-weight:bold; margin-bottom:10px; }
+        .btn-copy:hover { background:#a88820; }
+        .btn-csv  { width:100%; padding:12px; background:#7a5c00; color:white; border:none; border-radius:4px; cursor:pointer; font-size:15px; font-weight:bold; }
+        .btn-csv:hover  { background:#5c4500; }
+        #saveStatus { display:none; margin-top:10px; padding:10px 14px; border-radius:6px; font-size:13px; font-weight:500; text-align:center; }
+        #saveStatus.success { display:block; background:#fdf6dc; color:#7a5c00; border:1px solid #e5c55a; }
+        #saveStatus.error   { display:block; background:#FCEBEB; color:#A32D2D; border:1px solid #F7C1C1; }
+        .scroll-hint { font-size:10px; color:#bbb; text-align:right; margin-bottom:4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="back-link">← Back to Departments</a>
+    <span class="dept-badge">🪨 Ingot Department</span>
+    <h2>Ingot Input Form</h2>
+
+    <!-- Supervisor + Shift -->
+    <div class="footer-info">
+        <input type="text" id="supName" placeholder="Supervisor Name">
+        <select id="shift">
+            <option value="Shift 1|06:00-14:00">Shift 1 (06:00-14:00)</option>
+            <option value="Shift 2|14:00-22:00">Shift 2 (14:00-22:00)</option>
+            <option value="Shift 3|22:00-06:00">Shift 3 (22:00-06:00)</option>
+            <option value="Complete Day|00:00-24:00">Complete Day (00:00-24:00)</option>
+        </select>
+    </div>
+
+    <!-- Puller Data Table -->
+    <div class="section-title">Puller Data</div>
+    <div class="scroll-hint">← scroll to see all pullers →</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>P1</th><th>P2</th><th>P3</th><th>P4</th>
+                    <th>P5</th><th>P6</th><th>P7</th><th>P8</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Phase row -->
+                <tr>
+                    <td class="row-label">Phase</td>
+                    <td><select class="phase-sel" id="phase_1"><option value="Charging">Charging</option><option value="Melting">Melting</option><option value="Head Growth">Head Growth</option><option value="Body Growth">Body Growth</option><option value="Tail Growth">Tail Growth</option><option value="Harvested">Harvested</option></select></td>
+                    <td><select class="phase-sel" id="phase_2"><option value="Charging">Charging</option><option value="Melting">Melting</option><option value="Head Growth">Head Growth</option><option value="Body Growth">Body Growth</option><option value="Tail Growth">Tail Growth</option><option value="Harvested">Harvested</option></select></td>
+                    <td><select class="phase-sel" id="phase_3"><option value="Charging">Charging</option><option value="Melting">Melting</option><option value="Head Growth">Head Growth</option><option value="Body Growth">Body Growth</option><option value="Tail Growth">Tail Growth</option><option value="Harvested">Harvested</option></select></td>
+                    <td><select class="phase-sel" id="phase_4"><option value="Charging">Charging</option><option value="Melting">Melting</option><option value="Head Growth">Head Growth</option><option value="Body Growth">Body Growth</option><option value="Tail Growth">Tail Growth</option><option value="Harvested">Harvested</option></select></td>
+                    <td><select class="phase-sel" id="phase_5"><option value="Charging">Charging</option><option value="Melting">Melting</option><option value="Head Growth">Head Growth</option><option value="Body Growth">Body Growth</option><option value="Tail Growth">Tail Growth</option><option value="Harvested">Harvested</option></select></td>
+                    <td><select class="phase-sel" id="phase_6"><option value="Charging">Charging</option><option value="Melting">Melting</option><option value="Head Growth">Head Growth</option><option value="Body Growth">Body Growth</option><option value="Tail Growth">Tail Growth</option><option value="Harvested">Harvested</option></select></td>
+                    <td><select class="phase-sel" id="phase_7"><option value="Charging">Charging</option><option value="Melting">Melting</option><option value="Head Growth">Head Growth</option><option value="Body Growth">Body Growth</option><option value="Tail Growth">Tail Growth</option><option value="Harvested">Harvested</option></select></td>
+                    <td><select class="phase-sel" id="phase_8"><option value="Charging">Charging</option><option value="Melting">Melting</option><option value="Head Growth">Head Growth</option><option value="Body Growth">Body Growth</option><option value="Tail Growth">Tail Growth</option><option value="Harvested">Harvested</option></select></td>
+                </tr>
+                <!-- Ingot Produced row -->
+                <tr>
+                    <td class="row-label">Ingot Produced</td>
+                    <td><input type="number" class="ingot-inp" id="ingot_1" min="0" step="1" value="0" oninput="onIngotChange(this)"></td>
+                    <td><input type="number" class="ingot-inp" id="ingot_2" min="0" step="1" value="0" oninput="onIngotChange(this)"></td>
+                    <td><input type="number" class="ingot-inp" id="ingot_3" min="0" step="1" value="0" oninput="onIngotChange(this)"></td>
+                    <td><input type="number" class="ingot-inp" id="ingot_4" min="0" step="1" value="0" oninput="onIngotChange(this)"></td>
+                    <td><input type="number" class="ingot-inp" id="ingot_5" min="0" step="1" value="0" oninput="onIngotChange(this)"></td>
+                    <td><input type="number" class="ingot-inp" id="ingot_6" min="0" step="1" value="0" oninput="onIngotChange(this)"></td>
+                    <td><input type="number" class="ingot-inp" id="ingot_7" min="0" step="1" value="0" oninput="onIngotChange(this)"></td>
+                    <td><input type="number" class="ingot-inp" id="ingot_8" min="0" step="1" value="0" oninput="onIngotChange(this)"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Cost Drivers -->
+    <div class="section-title">Cost Drivers</div>
+    <div class="no-active" id="noCost">Set Ingot Produced &gt; 0 for any puller to enter cost drivers.</div>
+    <div id="costSection">
+        <div class="table-wrap">
+            <table id="costTable"></table>
+        </div>
+    </div>
+
+    <!-- Bottom Fields -->
+    <div class="section-title">Shift Summary</div>
+    <div class="bottom-grid">
+        <div><label>Inventory</label><textarea id="inventory" placeholder="Inventory details..."></textarea></div>
+        <div><label>Dispatch</label><textarea id="dispatch" placeholder="Dispatch details..."></textarea></div>
+        <div><label>Breakdown</label><textarea id="breakdown" placeholder="Any breakdowns this shift..."></textarea></div>
+        <div><label>Concerns</label><textarea id="concerns" placeholder="Any concerns..."></textarea></div>
+        <div><label>Data Expectancy</label><textarea id="dataExp" placeholder="How you expect the data..."></textarea></div>
+    </div>
+
+    <button class="btn-copy" onclick="copyReport()">📋 Copy WhatsApp Report</button>
+    <button class="btn-csv"  onclick="downloadCSV()">📊 Download as Excel (CSV)</button>
+    <div id="saveStatus"></div>
+</div>
+
+<script>
+    const N = 8;
+    const PHASE_SHORT = { 'Charging':'C', 'Melting':'M', 'Head Growth':'H', 'Body Growth':'B', 'Tail Growth':'T', 'Harvested':'Hrv' };
+
+    // Store cost driver values so they survive table rebuilds
+    let cdStore = {};
+
+    function getShiftName() { return document.getElementById('shift').value.split('|')[0]; }
+    function getShiftTime() { return document.getElementById('shift').value.split('|')[1]; }
+
+    // Enforce whole number on ingot inputs
+    function onIngotChange(el) {
+        let v = Math.floor(parseFloat(el.value) || 0);
+        if (v < 0) v = 0;
+        el.value = v;
+        saveCDStore();
+        rebuildCostTable();
+    }
+
+    function getActivePullers() {
+        const active = [];
+        for (let i = 1; i <= N; i++) {
+            if ((parseInt(document.getElementById('ingot_'+i).value) || 0) > 0) active.push(i);
+        }
+        return active;
+    }
+
+    // Save whatever is currently in the cost driver inputs
+    function saveCDStore() {
+        for (let i = 1; i <= N; i++) {
+            const l = document.getElementById('len_'+i);
+            const a = document.getElementById('ar_'+i);
+            const p = document.getElementById('pow_'+i);
+            if (l || a || p) {
+                cdStore[i] = { len: l?.value||'', ar: a?.value||'', pow: p?.value||'' };
+            }
+        }
+    }
+
+    function rebuildCostTable() {
+        const active = getActivePullers();
+        document.getElementById('noCost').style.display    = active.length ? 'none'  : 'block';
+        document.getElementById('costSection').style.display = active.length ? 'block' : 'none';
+        if (!active.length) return;
+
+        let html = '<thead><tr><th>Cost Driver</th>';
+        active.forEach(p => { html += `<th>P${p}</th>`; });
+        html += '</tr></thead><tbody>';
+
+        // Length row
+        html += '<tr><td class="row-label">Length (mm)</td>';
+        active.forEach(p => { html += `<td><input type="number" class="cd-inp" id="len_${p}" placeholder="0" step="1" min="0" value="${cdStore[p]?.len||''}"></td>`; });
+        html += '</tr>';
+
+        // Argon row
+        html += '<tr><td class="row-label">Argon Consumption (M³)</td>';
+        active.forEach(p => { html += `<td><input type="number" class="cd-inp" id="ar_${p}" placeholder="0" step="0.1" min="0" value="${cdStore[p]?.ar||''}"></td>`; });
+        html += '</tr>';
+
+        // Power row
+        html += '<tr><td class="row-label">Power (kWh)</td>';
+        active.forEach(p => { html += `<td><input type="number" class="cd-inp" id="pow_${p}" placeholder="0" step="0.1" min="0" value="${cdStore[p]?.pow||''}"></td>`; });
+        html += '</tr>';
+
+        html += '</tbody>';
+        document.getElementById('costTable').innerHTML = html;
+    }
+
+    // ── WHATSAPP COPY ─────────────────────────────────────────────────────────
+    function copyReport() {
+        saveCDStore();
+        const date  = new Date().toLocaleDateString('en-GB');
+        const time  = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        const sup   = document.getElementById('supName').value || 'N/A';
+        const shift = getShiftName(), shiftT = getShiftTime();
+        const active = getActivePullers();
+
+        // Collect per-puller data
+        const phases = [], ingots = [];
+        for (let i = 1; i <= N; i++) {
+            const ph = document.getElementById('phase_'+i).value;
+            phases.push(PHASE_SHORT[ph] || ph.charAt(0));
+            ingots.push(document.getElementById('ingot_'+i).value || '0');
+        }
+
+        // Helper: pad string to width
+        const pad = (s, w) => String(s).padEnd(w, ' ');
+        const COL = 5; // column width for cost driver table
+
+        // Build header rows using fixed columns
+        const pnRow  = 'PN  | ' + Array.from({length:N},(_,i)=>i+1).join(' | ');
+        const phRow  = 'Ph  | ' + phases.join('  | ');
+        const prRow  = 'Pr  | ' + ingots.join('  | ');
+
+        let report = `INGOT SHIFT REPORT\n`;
+        report += `Date      : ${date}\n`;
+        report += `Shift     : ${shift} (${shiftT})\n`;
+        report += `Supervisor: ${sup}\n\n`;
+        report += pnRow + '\n';
+        report += phRow + '\n';
+        report += prRow + '\n';
+
+        if (active.length > 0) {
+            report += `\nCost Drivers:\n`;
+            // PN header row
+            report += `PN  | ` + active.map(p => pad(p, COL)).join('| ') + '\n';
+            // Len row
+            report += `Len | ` + active.map(p => pad(cdStore[p]?.len || '', COL)).join('| ') + '\n';
+            // Ar row
+            report += `Ar  | ` + active.map(p => pad(cdStore[p]?.ar  || '', COL)).join('| ') + '\n';
+            // Pow row
+            report += `Pow | ` + active.map(p => pad(cdStore[p]?.pow || '', COL)).join('| ') + '\n';
+        }
+
+        report += `\nInventory  : ${document.getElementById('inventory').value || 'Nil'}\n`;
+        report += `Dispatch   : ${document.getElementById('dispatch').value   || 'Nil'}\n`;
+        report += `Breakdown  : ${document.getElementById('breakdown').value  || 'Nil'}\n`;
+        report += `Concerns   : ${document.getElementById('concerns').value   || 'Nil'}\n`;
+        report += `\nReported by: ${sup} | ${time}`;
+
+        navigator.clipboard.writeText(report).then(() => {
+            alert('WhatsApp report copied! Paste it in WhatsApp.');
+        });
+    }
+
+    // ── CSV DOWNLOAD ──────────────────────────────────────────────────────────
+    function downloadCSV() {
+        saveCDStore();
+        const status = document.getElementById('saveStatus');
+        const sup    = document.getElementById('supName').value || '';
+        if (!sup.trim()) {
+            status.className = 'error';
+            status.textContent = 'Please enter supervisor name before downloading.';
+            return;
+        }
+
+        const date   = new Date().toLocaleDateString('en-GB');
+        const time   = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        const shift  = getShiftName(), shiftT = getShiftTime();
+
+        // Build headers: Date, Shift, Shift Time, Supervisor, then per puller × 5 cols, then summary
+        const headers = ['Date', 'Shift', 'Shift Time', 'Supervisor'];
+        for (let i = 1; i <= N; i++) {
+            headers.push(`P${i} - Phase`);
+            headers.push(`P${i} - Ingot Produced`);
+            headers.push(`P${i} - Length (mm)`);
+            headers.push(`P${i} - Argon Consumption (M3)`);
+            headers.push(`P${i} - Power (kWh)`);
+        }
+        headers.push('Inventory', 'Dispatch', 'Breakdown', 'Concerns', 'Data Expectancy', 'Reported At');
+
+        // Build row
+        const row = [date, shift, shiftT, sup];
+        for (let i = 1; i <= N; i++) {
+            const ph     = document.getElementById('phase_'+i).value;
+            const ingot  = document.getElementById('ingot_'+i).value || '0';
+            const hasCD  = (parseInt(ingot) || 0) > 0;
+            row.push(ph);
+            row.push(ingot);
+            row.push(hasCD ? (cdStore[i]?.len || '') : '');
+            row.push(hasCD ? (cdStore[i]?.ar  || '') : '');
+            row.push(hasCD ? (cdStore[i]?.pow || '') : '');
+        }
+        row.push(
+            document.getElementById('inventory').value.replace(/,/g,';').replace(/\n/g,' '),
+            document.getElementById('dispatch').value.replace(/,/g,';').replace(/\n/g,' '),
+            document.getElementById('breakdown').value.replace(/,/g,';').replace(/\n/g,' '),
+            document.getElementById('concerns').value.replace(/,/g,';').replace(/\n/g,' '),
+            document.getElementById('dataExp').value.replace(/,/g,';').replace(/\n/g,' '),
+            time
+        );
+
+        const csv = [headers.join(','), row.map(v => `"${v}"`).join(',')].join('\n');
+        const safeDate = new Date().toLocaleDateString('en-GB').replace(/\//g,'-');
+        const filename = 'IngotReport_' + shift.replace(/ /g,'') + '_' + safeDate + '.csv';
+
+        const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = filename;
+        document.body.appendChild(link); link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        status.className = 'success';
+        status.textContent = 'Downloaded: ' + filename + ' — open in Excel and paste into your master sheet.';
+    }
+</script>
+</body>
+</html>
