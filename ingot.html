@@ -112,7 +112,6 @@
         <div><label>Dispatch</label><textarea id="dispatch" placeholder="Dispatch details..."></textarea></div>
         <div><label>Breakdown</label><textarea id="breakdown" placeholder="Any breakdowns this shift..."></textarea></div>
         <div><label>Concerns</label><textarea id="concerns" placeholder="Any concerns..."></textarea></div>
-        <div><label>Data Expectancy</label><textarea id="dataExp" placeholder="How you expect the data..."></textarea></div>
     </div>
 
     <button class="btn-copy" onclick="copyReport()">📋 Copy WhatsApp Report</button>
@@ -245,7 +244,7 @@
         });
     }
 
-    // ── CSV DOWNLOAD ──────────────────────────────────────────────────────────
+    // ── CSV DOWNLOAD — multi-row template format ──────────────────────────────
     function downloadCSV() {
         saveCDStore();
         const status = document.getElementById('saveStatus');
@@ -256,45 +255,59 @@
             return;
         }
 
-        const date   = new Date().toLocaleDateString('en-GB');
-        const time   = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-        const shift  = getShiftName(), shiftT = getShiftTime();
+        const date  = new Date().toLocaleDateString('en-GB');
+        const time  = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        const shift = getShiftName() + ' (' + getShiftTime() + ')';
 
-        // Build headers: Date, Shift, Shift Time, Supervisor, then per puller × 5 cols, then summary
-        const headers = ['Date', 'Shift', 'Shift Time', 'Supervisor'];
+        // Helper: build a full 10-column CSV row (col A + col B + P1..P8)
+        const r = (colA, colB, ...vals) => {
+            const cells = [colA, colB, ...vals];
+            // pad to 10 columns
+            while (cells.length < 10) cells.push('');
+            return cells.map(v => `"${String(v).replace(/"/g,'""').replace(/\n/g,' ')}"`).join(',');
+        };
+
+        // Collect phase and ingot values for all 8 pullers
+        const phases = [], ingots = [];
         for (let i = 1; i <= N; i++) {
-            headers.push(`P${i} - Phase`);
-            headers.push(`P${i} - Ingot Produced`);
-            headers.push(`P${i} - Length (mm)`);
-            headers.push(`P${i} - Argon Consumption (M3)`);
-            headers.push(`P${i} - Power (kWh)`);
+            phases.push(document.getElementById('phase_'+i).value);
+            ingots.push(document.getElementById('ingot_'+i).value || '0');
         }
-        headers.push('Inventory', 'Dispatch', 'Breakdown', 'Concerns', 'Data Expectancy', 'Reported At');
 
-        // Build row
-        const row = [date, shift, shiftT, sup];
+        // Cost driver values — blank for pullers with 0 ingots
+        const lens = [], ars = [], pows = [];
         for (let i = 1; i <= N; i++) {
-            const ph     = document.getElementById('phase_'+i).value;
-            const ingot  = document.getElementById('ingot_'+i).value || '0';
-            const hasCD  = (parseInt(ingot) || 0) > 0;
-            row.push(ph);
-            row.push(ingot);
-            row.push(hasCD ? (cdStore[i]?.len || '') : '');
-            row.push(hasCD ? (cdStore[i]?.ar  || '') : '');
-            row.push(hasCD ? (cdStore[i]?.pow || '') : '');
+            const active = (parseInt(ingots[i-1]) || 0) > 0;
+            lens.push(active ? (cdStore[i]?.len || '') : '');
+            ars.push( active ? (cdStore[i]?.ar  || '') : '');
+            pows.push(active ? (cdStore[i]?.pow || '') : '');
         }
-        row.push(
-            document.getElementById('inventory').value.replace(/,/g,';').replace(/\n/g,' '),
-            document.getElementById('dispatch').value.replace(/,/g,';').replace(/\n/g,' '),
-            document.getElementById('breakdown').value.replace(/,/g,';').replace(/\n/g,' '),
-            document.getElementById('concerns').value.replace(/,/g,';').replace(/\n/g,' '),
-            document.getElementById('dataExp').value.replace(/,/g,';').replace(/\n/g,' '),
-            time
-        );
 
-        const csv = [headers.join(','), row.map(v => `"${v}"`).join(',')].join('\n');
+        const inv  = document.getElementById('inventory').value || '';
+        const disp = document.getElementById('dispatch').value  || '';
+        const brkd = document.getElementById('breakdown').value || '';
+        const conc = document.getElementById('concerns').value  || '';
+
+        // ── Build rows matching the Excel template layout ──────────────────
+        //        Col A                 Col B                  P1…P8
+        const rows = [
+            r(sup,                  'Puller No.',           1,2,3,4,5,6,7,8),
+            r(date,                 'Phase',                ...phases),
+            r(shift,                'Ingot Produced',       ...ingots),
+            r('',                   'Length (mm)',          ...lens),
+            r('',                   'Argon Consumption (M3)', ...ars),
+            r('',                   'Power (kWh)',          ...pows),
+            r('','','','','','','','','',''),           // blank separator row
+            r('',                   'Inventory',            inv),
+            r('',                   'Dispatch',             disp),
+            r('',                   'Breakdown',            brkd),
+            r('',                   'Concern',              conc),
+            r('',                   'Reported At',          time),
+        ];
+
+        const csv      = rows.join('\n');
         const safeDate = new Date().toLocaleDateString('en-GB').replace(/\//g,'-');
-        const filename = 'IngotReport_' + shift.replace(/ /g,'') + '_' + safeDate + '.csv';
+        const filename = 'IngotReport_' + getShiftName().replace(/ /g,'') + '_' + safeDate + '.csv';
 
         const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
         const url  = URL.createObjectURL(blob);
@@ -305,7 +318,7 @@
         URL.revokeObjectURL(url);
 
         status.className = 'success';
-        status.textContent = 'Downloaded: ' + filename + ' — open in Excel and paste into your master sheet.';
+        status.textContent = 'Downloaded: ' + filename;
     }
 </script>
 </body>
