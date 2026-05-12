@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shaping Department</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        /* ── Palette: mature slate-teal ──────────────────────────────────── */
+        :root {
+            --primary:    #2E4057;   /* deep navy slate   */
+            --accent:     #5B8A9F;   /* muted steel blue  */
+            --accent-lt:  #E8EDF0;   /* pale blue-grey    */
+            --accent-mid: #9AB8C8;   /* medium blue-grey  */
+            --body-bg:    #F0F3F5;   /* cool light grey   */
+            --card-bg:    #FFFFFF;
+            --border:     #D0DAE0;
+            --text:       #2A2A2A;
+            --muted:      #607080;
+            --hint:       #9AABB5;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--body-bg); padding: 16px; color: var(--text); margin: 0; }
+        .container { max-width: 700px; margin: auto; background: var(--card-bg); padding: 24px; border-radius: 10px; box-shadow: 0 2px 14px rgba(46,64,87,0.10); }
+
+        .back-link { display: inline-block; margin-bottom: 14px; font-size: 13px; color: var(--muted); text-decoration: none; }
+        .back-link:hover { color: var(--primary); }
+
+        .dept-badge { display: block; text-align: center; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+        h2 { text-align: center; color: var(--primary); margin: 0 0 20px; font-size: 20px; font-weight: 700; }
+
+        /* Supervisor + Shift */
+        .top-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+        .top-row input, .top-row select {
+            flex: 1; min-width: 140px; padding: 9px 12px;
+            border: 1.5px solid var(--border); border-radius: 6px;
+            font-size: 14px; color: var(--text);
+            background: #FAFBFC;
+            transition: border-color 0.15s;
+        }
+        .top-row input:focus, .top-row select:focus { outline: none; border-color: var(--accent); }
+
+        /* Section title */
+        .section-title {
+            font-size: 10px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: .09em; color: var(--primary);
+            background: var(--accent-lt); border-left: 3px solid var(--accent);
+            padding: 6px 12px; margin: 20px 0 12px; border-radius: 0 4px 4px 0;
+        }
+
+        /* Equipment block */
+        .equip-block { border: 1.5px solid var(--border); border-radius: 8px; margin-bottom: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(46,64,87,0.06); }
+        .equip-header { background: var(--primary); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
+        .equip-header span { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: .02em; }
+        .remove-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-size: 11px; font-weight: 600; padding: 4px 11px; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
+        .remove-btn:hover { background: rgba(255,255,255,0.28); }
+
+        /* Table */
+        .equip-table { width: 100%; border-collapse: collapse; }
+        .equip-table thead th { background: var(--accent-lt); color: var(--primary); font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+        .equip-table td { padding: 8px 12px; border-bottom: 1px solid #EEF1F3; font-size: 13px; vertical-align: middle; }
+        .equip-table td:first-child { color: var(--muted); font-weight: 500; background: #FAFBFC; width: 58%; }
+        .equip-table tr:last-child td { border-bottom: none; }
+        .equip-table input { width: 100%; padding: 6px 9px; border: 1.5px solid var(--border); border-radius: 5px; font-size: 13px; color: var(--text); background: #fff; transition: border-color 0.15s; }
+        .equip-table input:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+        /* Add row */
+        .add-row { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; margin-bottom: 6px; }
+        .add-row select {
+            flex: 1; min-width: 200px; padding: 9px 12px;
+            border: 1.5px dashed var(--accent-mid); border-radius: 6px;
+            font-size: 13px; color: var(--primary); background: #F5F8FA;
+            cursor: pointer;
+        }
+        .add-btn { padding: 9px 20px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: .02em; transition: background 0.15s; white-space: nowrap; }
+        .add-btn:hover { background: #3d6e84; }
+        .add-btn:disabled { background: var(--hint); cursor: not-allowed; }
+        .all-added-msg { font-size: 12px; color: var(--hint); font-style: italic; margin: 4px 0 8px; display: none; }
+
+        /* Bottom fields */
+        .bottom-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+        .bottom-grid label { font-size: 11px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .06em; }
+        .bottom-grid textarea {
+            width: 100%; padding: 9px 12px;
+            border: 1.5px solid var(--border); border-radius: 6px;
+            font-family: inherit; font-size: 13px; color: var(--text);
+            resize: vertical; min-height: 52px; background: #FAFBFC;
+            transition: border-color 0.15s;
+        }
+        .bottom-grid textarea:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+        /* Buttons */
+        .btn-copy { width: 100%; padding: 13px; background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 700; margin-bottom: 10px; letter-spacing: .02em; transition: background 0.15s; }
+        .btn-copy:hover { background: #3d6e84; }
+        .btn-csv  { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 700; letter-spacing: .02em; transition: background 0.15s; }
+        .btn-csv:hover  { background: #1E2D3D; }
+
+        #saveStatus { display: none; margin-top: 10px; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; text-align: center; }
+        #saveStatus.success { display: block; background: var(--accent-lt); color: var(--primary); border: 1px solid var(--accent-mid); }
+        #saveStatus.error   { display: block; background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
+
+        .scroll-hint { font-size: 10px; color: var(--hint); text-align: right; margin-bottom: 4px; }
+        .divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="wafer.html" class="back-link">← Back to Wafering</a>
+    <span class="dept-badge">Wafering &nbsp;/&nbsp; Shaping</span>
+    <h2>Shaping Department</h2>
+
+    <!-- Supervisor + Shift -->
+    <div class="top-row">
+        <input type="text" id="supName" placeholder="Supervisor Name">
+        <select id="shift">
+            <option value="Shift 1|06:00-14:00">Shift 1 (06:00-14:00)</option>
+            <option value="Shift 2|14:00-22:00">Shift 2 (14:00-22:00)</option>
+            <option value="Shift 3|22:00-06:00">Shift 3 (22:00-06:00)</option>
+            <option value="Complete Day|00:00-24:00">Complete Day (00:00-24:00)</option>
+        </select>
+    </div>
+
+    <!-- Equipment Blocks -->
+    <div class="section-title">Equipment Data</div>
+    <div id="equipContainer"></div>
+
+    <!-- Add Equipment -->
+    <div class="add-row">
+        <select id="equipSelect">
+            <option value="">-- Select equipment to add --</option>
+            <option value="SHC">Single Head Cropper</option>
+            <option value="ISG">Integrated Squarer and Grinder</option>
+            <option value="HCG">Half Cut Grinder</option>
+            <option value="VI">Vision Inspection</option>
+        </select>
+        <button class="add-btn" id="addBtn" onclick="addEquipment()">+ Add</button>
+    </div>
+    <div class="all-added-msg" id="allAddedMsg">All 4 equipment sections have been added.</div>
+
+    <hr class="divider">
+
+    <!-- Remarks & Concerns -->
+    <div class="section-title">Remarks and Concerns</div>
+    <div class="bottom-grid">
+        <div><label>Remarks</label><textarea id="remarks" rows="2">No remarks</textarea></div>
+        <div><label>Any Concerns</label><textarea id="concerns" rows="2">Nil</textarea></div>
+    </div>
+
+    <button class="btn-copy" onclick="copyReport()">Copy Formatted Report (WhatsApp)</button>
+    <button class="btn-csv"  onclick="downloadCSV()">Download as Excel (CSV)</button>
+    <div id="saveStatus"></div>
+</div>
+
+<script>
+    const EQUIPMENT = {
+        SHC: {
+            name: 'Single Head Cropper',
+            fields: [
+                { id: 'ingots_received',   label: 'Number of Ingots Received',   type: 'number' },
+                { id: 'ingot_mm',          label: 'Ingot (mm)',                   type: 'number' },
+                { id: 'total_cuts',        label: 'Total no. of Cuts',            type: 'number' },
+                { id: 'segments_produced', label: 'Number of Segment Produced',   type: 'number' },
+                { id: 'output_mm',         label: 'Output (mm)',                  type: 'number' },
+                { id: 'defects',           label: 'Defects / Rejections',         type: 'text'   },
+            ]
+        },
+        ISG: {
+            name: 'Integrated Squarer and Grinder',
+            fields: [
+                { id: 'segments_received', label: 'Number of Segment Received',   type: 'number' },
+                { id: 'input_mm',          label: 'Input (mm)',                   type: 'number' },
+                { id: 'total_cuts',        label: 'Total no. Cuts',               type: 'number' },
+                { id: 'bricks_produced',   label: 'Number of Brick Produced',     type: 'number' },
+                { id: 'output_mm',         label: 'Output (mm)',                  type: 'number' },
+                { id: 'defects',           label: 'Defects / Rejections',         type: 'text'   },
+            ]
+        },
+        HCG: {
+            name: 'Half Cut Grinder',
+            fields: [
+                { id: 'bricks_received',     label: 'Number of Bricks Received',      type: 'number' },
+                { id: 'input_mm',            label: 'Input (mm)',                      type: 'number' },
+                { id: 'total_cuts',          label: 'Total no. Cuts',                  type: 'number' },
+                { id: 'halfbricks_produced', label: 'Number of Half Brick Produced',   type: 'number' },
+                { id: 'output_mm',           label: 'Output (mm)',                     type: 'number' },
+                { id: 'defects',             label: 'Defects / Rejections',            type: 'text'   },
+            ]
+        },
+        VI: {
+            name: 'Vision Inspection',
+            fields: [
+                { id: 'halfbricks_received',  label: 'Number of Half Brick Received',  type: 'number' },
+                { id: 'input_mm',             label: 'Input (mm)',                      type: 'number' },
+                { id: 'halfbricks_inspected', label: 'Number of Half Brick Inspected',  type: 'number' },
+                { id: 'output_mm',            label: 'Output (mm)',                     type: 'number' },
+                { id: 'defects',              label: 'Defects / Rejections',            type: 'text'   },
+            ]
+        }
+    };
+
+    let added = [];
+
+    function getShiftName() { return document.getElementById('shift').value.split('|')[0]; }
+    function getShiftTime() { return document.getElementById('shift').value.split('|')[1]; }
+
+    function updateAddDropdown() {
+        const sel = document.getElementById('equipSelect');
+        Array.from(sel.options).forEach(opt => {
+            if (!opt.value) return;
+            opt.disabled = added.includes(opt.value);
+        });
+        const allDone = added.length >= 4;
+        document.getElementById('addBtn').disabled = allDone;
+        document.getElementById('allAddedMsg').style.display = allDone ? 'block' : 'none';
+        if (sel.selectedOptions[0]?.disabled) sel.value = '';
+    }
+
+    function addEquipment() {
+        const key = document.getElementById('equipSelect').value;
+        if (!key || added.includes(key)) return;
+
+        const eq = EQUIPMENT[key];
+        added.push(key);
+
+        const block = document.createElement('div');
+        block.className = 'equip-block';
+        block.id = 'block_' + key;
+
+        let rows = '';
+        eq.fields.forEach(f => {
+            rows += `<tr>
+                <td>${f.label}</td>
+                <td><input type="${f.type}" id="${key}_${f.id}" placeholder="${f.type === 'number' ? '0' : '—'}"></td>
+            </tr>`;
+        });
+
+        block.innerHTML = `
+            <div class="equip-header">
+                <span>${eq.name}</span>
+                <button class="remove-btn" onclick="removeEquipment('${key}')">Remove</button>
+            </div>
+            <table class="equip-table">
+                <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+
+        document.getElementById('equipContainer').appendChild(block);
+        document.getElementById('equipSelect').value = '';
+        updateAddDropdown();
+    }
+
+    function removeEquipment(key) {
+        const block = document.getElementById('block_' + key);
+        if (block) block.remove();
+        added = added.filter(k => k !== key);
+        updateAddDropdown();
+    }
+
+    function collectData() {
+        const result = {};
+        added.forEach(key => {
+            result[key] = {};
+            EQUIPMENT[key].fields.forEach(f => {
+                const el = document.getElementById(key + '_' + f.id);
+                result[key][f.id] = el ? el.value.trim() : '';
+            });
+        });
+        return result;
+    }
+
+    // ── WhatsApp copy ─────────────────────────────────────────────────────────
+    function copyReport() {
+        if (added.length === 0) { alert('Please add at least one equipment section before copying.'); return; }
+        const sup = document.getElementById('supName').value || 'N/A';
+        const date = new Date().toLocaleDateString('en-GB');
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const data = collectData();
+
+        let report = `SHAPING DEPARTMENT REPORT\n`;
+        report += `Date      : ${date}\n`;
+        report += `Shift     : ${getShiftName()} (${getShiftTime()})\n`;
+        report += `Supervisor: ${sup}\n`;
+
+        added.forEach(key => {
+            const eq = EQUIPMENT[key];
+            report += `\n--- ${eq.name} ---\n`;
+            eq.fields.forEach(f => {
+                report += ` ${f.label} : ${data[key][f.id] || '-'}\n`;
+            });
+        });
+
+        report += `\nRemarks  : ${document.getElementById('remarks').value}`;
+        report += `\nConcerns : ${document.getElementById('concerns').value}`;
+        report += `\nReported by: ${sup} | ${time}`;
+
+        navigator.clipboard.writeText(report).then(() => {
+            alert('Report copied! Paste it in WhatsApp.');
+        });
+    }
+
+    // ── CSV Download ──────────────────────────────────────────────────────────
+    function downloadCSV() {
+        const status = document.getElementById('saveStatus');
+        const sup = document.getElementById('supName').value || '';
+        if (!sup.trim()) { status.className = 'error'; status.textContent = 'Please enter supervisor name before downloading.'; return; }
+        if (added.length === 0) { status.className = 'error'; status.textContent = 'Please add at least one equipment section before downloading.'; return; }
+
+        const date = new Date().toLocaleDateString('en-GB');
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const data = collectData();
+        const remarks  = document.getElementById('remarks').value.replace(/,/g,';').replace(/\n/g,' ');
+        const concerns = document.getElementById('concerns').value.replace(/,/g,';').replace(/\n/g,' ');
+
+        const q = v => `"${String(v).replace(/"/g,'""')}"`;
+        let rows = [];
+
+        // Header info
+        rows.push([q('Supervisor'), q(sup),   '', q('Date'),        q(date)].join(','));
+        rows.push([q('Shift'),  q(getShiftName()+' ('+getShiftTime()+')'), '', q('Reported At'), q(time)].join(','));
+        rows.push(['', '', '', '', ''].join(','));
+
+        // Equipment blocks
+        added.forEach(key => {
+            const eq = EQUIPMENT[key];
+            rows.push([q(eq.name), q('Value'), '', '', ''].join(','));
+            EQUIPMENT[key].fields.forEach(f => {
+                rows.push([q(f.label), q(data[key][f.id] || ''), '', '', ''].join(','));
+            });
+            rows.push(['', '', '', '', ''].join(','));
+        });
+
+        // Remarks & Concerns
+        rows.push([q('Remarks'),  q(remarks),  '', '', ''].join(','));
+        rows.push([q('Concerns'), q(concerns), '', '', ''].join(','));
+
+        const csv = rows.join('\n');
+        const safeDate = new Date().toLocaleDateString('en-GB').replace(/\//g,'-');
+        const filename = 'ShapingReport_' + getShiftName().replace(/ /g,'') + '_' + safeDate + '.csv';
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = filename;
+        document.body.appendChild(link); link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        status.className = 'success';
+        status.textContent = 'Downloaded: ' + filename;
+    }
+
+    updateAddDropdown();
+</script>
+</body>
+</html>
