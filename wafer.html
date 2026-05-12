@@ -3,26 +3,339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wafer Report Generator</title>
+    <title>Wafer - Shaping Department</title>
     <style>
-        body { font-family: sans-serif; background: #eef4fc; padding: 20px; color: #333; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #1a4a80; }
-        .dept-badge { display: block; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4a90d9; margin-bottom: 4px; }
-        .notice { background: #fff8e1; border: 1px dashed #f0c040; border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: #7a6000; text-align: center; line-height: 1.6; }
-        .back-link { display: inline-block; margin-bottom: 14px; font-size: 13px; color: #666; text-decoration: none; }
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; background: #eef4fc; padding: 16px; color: #333; margin: 0; }
+        .container { max-width: 680px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+
+        .back-link { display: inline-block; margin-bottom: 12px; font-size: 13px; color: #666; text-decoration: none; }
         .back-link:hover { color: #222; }
+        .dept-badge { display: block; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #4a90d9; margin-bottom: 4px; }
+        h2 { text-align: center; color: #1a4a80; margin: 0 0 16px; }
+
+        /* Supervisor + Shift */
+        .footer-info { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .footer-info input, .footer-info select { flex: 1; min-width: 140px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+
+        /* Section title */
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #1a4a80; background: #e8f3fc; border-left: 3px solid #4a90d9; padding: 5px 10px; margin: 18px 0 10px; }
+
+        /* Equipment block */
+        .equip-block { border: 1.5px solid #c5daf5; border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+        .equip-header { background: #1a4a80; color: white; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; }
+        .equip-header span { font-size: 13px; font-weight: 700; letter-spacing: .03em; }
+        .remove-btn { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 4px; cursor: pointer; }
+        .remove-btn:hover { background: rgba(255,255,255,0.35); }
+
+        /* Equipment table */
+        .equip-table { width: 100%; border-collapse: collapse; }
+        .equip-table th { background: #e8f3fc; color: #1a4a80; font-size: 12px; font-weight: 700; padding: 8px 10px; text-align: left; border-bottom: 1px solid #c5daf5; }
+        .equip-table td { padding: 7px 10px; border-bottom: 1px solid #e8e8e8; font-size: 13px; }
+        .equip-table td:first-child { font-weight: 500; color: #444; background: #fafaf8; width: 60%; }
+        .equip-table tr:last-child td { border-bottom: none; }
+        .equip-table input { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+        .equip-table input:focus { outline: none; border-color: #4a90d9; }
+
+        /* Add equipment */
+        .add-row { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+        .add-row select { flex: 1; min-width: 200px; padding: 9px 10px; border: 1.5px dashed #4a90d9; border-radius: 6px; font-size: 13px; background: #f5f9ff; color: #1a4a80; }
+        .add-btn { padding: 9px 18px; background: #4a90d9; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .add-btn:hover { background: #2e72c2; }
+        .add-btn:disabled { background: #aaa; cursor: not-allowed; }
+        .all-added-msg { font-size: 12px; color: #aaa; font-style: italic; margin: 4px 0; display: none; }
+
+        /* Bottom fields */
+        .bottom-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+        .bottom-grid label { font-size: 12px; font-weight: 700; color: #1a4a80; display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .04em; }
+        .bottom-grid textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 13px; resize: vertical; min-height: 48px; }
+
+        /* Buttons */
+        .btn-copy { width: 100%; padding: 12px; background: #4a90d9; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; margin-bottom: 10px; }
+        .btn-copy:hover { background: #2e72c2; }
+        .btn-csv  { width: 100%; padding: 12px; background: #1a4a80; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; }
+        .btn-csv:hover  { background: #0f3160; }
+
+        #saveStatus { display: none; margin-top: 10px; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; text-align: center; }
+        #saveStatus.success { display: block; background: #e8f3fc; color: #1a4a80; border: 1px solid #7ab3e0; }
+        #saveStatus.error   { display: block; background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
     </style>
 </head>
 <body>
 <div class="container">
-    <a href="index.html" class="back-link">← Back to Departments</a>
-    <span class="dept-badge">💿 Wafer Department</span>
-    <h2>Wafer Input Form</h2>
-    <div class="notice">
-        ⚠️ Wafer fields not yet configured.<br>
-        Share your Wafer parameter list and this page will be updated with the correct fields.
+    <a href="index.html" class="back-link">Back to Departments</a>
+    <span class="dept-badge">Wafer / Shaping Department</span>
+    <h2>Shaping Input Form</h2>
+
+    <!-- Supervisor + Shift -->
+    <div class="footer-info">
+        <input type="text" id="supName" placeholder="Supervisor Name">
+        <select id="shift">
+            <option value="Shift 1|06:00-14:00">Shift 1 (06:00-14:00)</option>
+            <option value="Shift 2|14:00-22:00">Shift 2 (14:00-22:00)</option>
+            <option value="Shift 3|22:00-06:00">Shift 3 (22:00-06:00)</option>
+            <option value="Complete Day|00:00-24:00">Complete Day (00:00-24:00)</option>
+        </select>
     </div>
+
+    <!-- Equipment Sections Container -->
+    <div class="section-title">Equipment Data</div>
+    <div id="equipContainer"></div>
+
+    <!-- Add Equipment -->
+    <div class="add-row">
+        <select id="equipSelect">
+            <option value="">-- Select equipment to add --</option>
+            <option value="SHC">Single Head Cropper</option>
+            <option value="ISG">Integrated Squarer and Grinder</option>
+            <option value="HCG">Half Cut Grinder</option>
+            <option value="VI">Vision Inspection</option>
+        </select>
+        <button class="add-btn" id="addBtn" onclick="addEquipment()">+ Add</button>
+    </div>
+    <div class="all-added-msg" id="allAddedMsg">All 4 equipment sections added.</div>
+
+    <!-- Remarks & Concerns -->
+    <div class="section-title">Remarks and Concerns</div>
+    <div class="bottom-grid">
+        <div><label>Remarks</label><textarea id="remarks" rows="2">No remarks</textarea></div>
+        <div><label>Any Concerns</label><textarea id="concerns" rows="2">Nil</textarea></div>
+    </div>
+
+    <button class="btn-copy" onclick="copyReport()">Copy Formatted Report (WhatsApp)</button>
+    <button class="btn-csv"  onclick="downloadCSV()">Download as Excel (CSV)</button>
+    <div id="saveStatus"></div>
 </div>
+
+<script>
+    // ── Equipment definitions ─────────────────────────────────────────────────
+    const EQUIPMENT = {
+        SHC: {
+            name: 'Single Head Cropper',
+            fields: [
+                { id: 'ingots_received',    label: 'Number of Ingots Received',   type: 'number' },
+                { id: 'ingot_mm',           label: 'Ingot (mm)',                   type: 'number' },
+                { id: 'total_cuts',         label: 'Total no. of Cuts',            type: 'number' },
+                { id: 'segments_produced',  label: 'Number of Segment Produced',   type: 'number' },
+                { id: 'output_mm',          label: 'Output (mm)',                  type: 'number' },
+                { id: 'defects',            label: 'Defects / Rejections',         type: 'text'   },
+            ]
+        },
+        ISG: {
+            name: 'Integrated Squarer and Grinder',
+            fields: [
+                { id: 'segments_received',  label: 'Number of Segment Received',   type: 'number' },
+                { id: 'input_mm',           label: 'Input (mm)',                   type: 'number' },
+                { id: 'total_cuts',         label: 'Total no. Cuts',               type: 'number' },
+                { id: 'bricks_produced',    label: 'Number of Brick Produced',     type: 'number' },
+                { id: 'output_mm',          label: 'Output (mm)',                  type: 'number' },
+                { id: 'defects',            label: 'Defects / Rejections',         type: 'text'   },
+            ]
+        },
+        HCG: {
+            name: 'Half Cut Grinder',
+            fields: [
+                { id: 'bricks_received',    label: 'Number of Bricks Received',    type: 'number' },
+                { id: 'input_mm',           label: 'Input (mm)',                   type: 'number' },
+                { id: 'total_cuts',         label: 'Total no. Cuts',               type: 'number' },
+                { id: 'halfbricks_produced',label: 'Number of Half Brick Produced',type: 'number' },
+                { id: 'output_mm',          label: 'Output (mm)',                  type: 'number' },
+                { id: 'defects',            label: 'Defects / Rejections',         type: 'text'   },
+            ]
+        },
+        VI: {
+            name: 'Vision Inspection',
+            fields: [
+                { id: 'halfbricks_received',label: 'Number of Half Brick Received', type: 'number' },
+                { id: 'input_mm',           label: 'Input (mm)',                    type: 'number' },
+                { id: 'halfbricks_inspected',label: 'Number of Half Brick Inspected',type: 'number'},
+                { id: 'output_mm',          label: 'Output (mm)',                   type: 'number' },
+                { id: 'defects',            label: 'Defects / Rejections',          type: 'text'   },
+            ]
+        }
+    };
+
+    // Track which equipment keys are currently added
+    let added = [];
+
+    function getShiftName() { return document.getElementById('shift').value.split('|')[0]; }
+    function getShiftTime() { return document.getElementById('shift').value.split('|')[1]; }
+
+    function updateAddDropdown() {
+        const sel = document.getElementById('equipSelect');
+        Array.from(sel.options).forEach(opt => {
+            if (!opt.value) return;
+            opt.disabled = added.includes(opt.value);
+        });
+        const allDone = added.length >= 4;
+        document.getElementById('addBtn').disabled = allDone;
+        document.getElementById('allAddedMsg').style.display = allDone ? 'block' : 'none';
+        // Reset dropdown to first available
+        if (sel.selectedOptions[0]?.disabled) sel.value = '';
+    }
+
+    function addEquipment() {
+        const key = document.getElementById('equipSelect').value;
+        if (!key || added.includes(key)) return;
+
+        const eq = EQUIPMENT[key];
+        added.push(key);
+
+        const block = document.createElement('div');
+        block.className = 'equip-block';
+        block.id = 'block_' + key;
+
+        let rows = '';
+        eq.fields.forEach(f => {
+            rows += `<tr>
+                <td>${f.label}</td>
+                <td><input type="${f.type}" id="${key}_${f.id}" placeholder="${f.type === 'number' ? '0' : '—'}"></td>
+            </tr>`;
+        });
+
+        block.innerHTML = `
+            <div class="equip-header">
+                <span>${eq.name}</span>
+                <button class="remove-btn" onclick="removeEquipment('${key}')">Remove</button>
+            </div>
+            <table class="equip-table">
+                <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+
+        document.getElementById('equipContainer').appendChild(block);
+        document.getElementById('equipSelect').value = '';
+        updateAddDropdown();
+    }
+
+    function removeEquipment(key) {
+        const block = document.getElementById('block_' + key);
+        if (block) block.remove();
+        added = added.filter(k => k !== key);
+        updateAddDropdown();
+    }
+
+    // ── Collect all data ──────────────────────────────────────────────────────
+    function collectData() {
+        const result = {};
+        added.forEach(key => {
+            const eq = EQUIPMENT[key];
+            result[key] = {};
+            eq.fields.forEach(f => {
+                const el = document.getElementById(key + '_' + f.id);
+                result[key][f.id] = el ? el.value.trim() : '';
+            });
+        });
+        return result;
+    }
+
+    // ── WhatsApp copy ─────────────────────────────────────────────────────────
+    function copyReport() {
+        const sup    = document.getElementById('supName').value || 'N/A';
+        const shift  = getShiftName(), shiftT = getShiftTime();
+        const date   = new Date().toLocaleDateString('en-GB');
+        const time   = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const data   = collectData();
+        const remarks  = document.getElementById('remarks').value;
+        const concerns = document.getElementById('concerns').value;
+
+        if (added.length === 0) {
+            alert('Please add at least one equipment section before copying.');
+            return;
+        }
+
+        let report = `WAFER - SHAPING DEPARTMENT REPORT\n`;
+        report += `Date      : ${date}\n`;
+        report += `Shift     : ${shift} (${shiftT})\n`;
+        report += `Supervisor: ${sup}\n`;
+
+        added.forEach(key => {
+            const eq = EQUIPMENT[key];
+            const d  = data[key];
+            report += `\n--- ${eq.name} ---\n`;
+            eq.fields.forEach(f => {
+                const val = d[f.id] || '-';
+                report += ` ${f.label} : ${val}\n`;
+            });
+        });
+
+        report += `\nRemarks  : ${remarks}`;
+        report += `\nConcerns : ${concerns}`;
+        report += `\nReported by: ${sup} | ${time}`;
+
+        navigator.clipboard.writeText(report).then(() => {
+            alert('Report copied! Paste it in WhatsApp.');
+        });
+    }
+
+    // ── CSV Download ──────────────────────────────────────────────────────────
+    function downloadCSV() {
+        const status   = document.getElementById('saveStatus');
+        const sup      = document.getElementById('supName').value || '';
+        if (!sup.trim()) {
+            status.className = 'error';
+            status.textContent = 'Please enter supervisor name before downloading.';
+            return;
+        }
+        if (added.length === 0) {
+            status.className = 'error';
+            status.textContent = 'Please add at least one equipment section before downloading.';
+            return;
+        }
+
+        const shift  = getShiftName(), shiftT = getShiftTime();
+        const date   = new Date().toLocaleDateString('en-GB');
+        const time   = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const data   = collectData();
+        const remarks  = document.getElementById('remarks').value.replace(/,/g,';').replace(/\n/g,' ');
+        const concerns = document.getElementById('concerns').value.replace(/,/g,';').replace(/\n/g,' ');
+
+        const q = v => `"${String(v).replace(/"/g,'""')}"`;
+
+        let rows = [];
+
+        // Header block
+        rows.push([q('Supervisor'), q(sup), q(''), q('Date'), q(date)].join(','));
+        rows.push([q('Shift'), q(shift + ' (' + shiftT + ')'), q(''), q('Reported At'), q(time)].join(','));
+        rows.push(['', '', '', '', ''].join(','));  // blank row
+
+        // Each equipment block
+        added.forEach(key => {
+            const eq = EQUIPMENT[key];
+            const d  = data[key];
+
+            // Equipment name row
+            rows.push([q(eq.name), q('Value'), '', '', ''].join(','));
+
+            eq.fields.forEach(f => {
+                rows.push([q(f.label), q(d[f.id] || ''), '', '', ''].join(','));
+            });
+
+            rows.push(['', '', '', '', ''].join(','));  // blank separator
+        });
+
+        // Remarks & Concerns
+        rows.push([q('Remarks'),  q(remarks),  '', '', ''].join(','));
+        rows.push([q('Concerns'), q(concerns), '', '', ''].join(','));
+
+        const csv      = rows.join('\n');
+        const safeDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        const filename = 'ShapingReport_' + shift.replace(/ /g,'') + '_' + safeDate + '.csv';
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = filename;
+        document.body.appendChild(link); link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        status.className = 'success';
+        status.textContent = 'Downloaded: ' + filename;
+    }
+
+    // Init
+    updateAddDropdown();
+</script>
 </body>
 </html>
