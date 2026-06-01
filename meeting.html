@@ -102,14 +102,14 @@
 
     <!-- ── MEETING HEADER ── -->
     <div class="sec-title">Meeting Details</div>
-    <div class="hdr-grid">
+    <div class="hdr-grid full">
         <div class="field"><label>Meeting Title</label><input type="text" id="meetTitle" placeholder="e.g. Weekly Production Review"></div>
-
     </div>
-    <div class="hdr-grid three">
+    <div class="hdr-grid" style="grid-template-columns:2fr 1fr 1fr 1fr;">
         <div class="field"><label>Venue / Place</label><input type="text" id="meetVenue" placeholder="e.g. Conference Room A"></div>
         <div class="field"><label>Date</label><input type="date" id="meetDate"></div>
-        <div class="field"><label>Time</label><input type="time" id="meetTime"></div>
+        <div class="field"><label>Start Time</label><input type="time" id="meetTimeStart"></div>
+        <div class="field"><label>End Time</label><input type="time" id="meetTimeEnd"></div>
     </div>
     <div class="hdr-grid">
         <div class="field"><label>Chaired By</label><input type="text" id="meetChair" placeholder="Name of chairperson"></div>
@@ -195,19 +195,19 @@
         if (map[sel.value]) sel.className = map[sel.value];
     }
 
-    // Seed 1 row at once
+    // Seed 1 row on load
     addRow();
 
     // ── Helpers ────────────────────────────────────────────────
     function getHeader() {
         return {
-            title  : document.getElementById('meetTitle').value.trim() || 'N/A',
-            ref    : document.getElementById('meetRef').value.trim()   || '',
-            venue  : document.getElementById('meetVenue').value.trim() || '',
-            date   : document.getElementById('meetDate').value         || '',
-            time   : document.getElementById('meetTime').value         || '',
-            chair  : document.getElementById('meetChair').value.trim() || '',
-            dept   : document.getElementById('meetDept').value.trim()  || '',
+            title    : document.getElementById('meetTitle').value.trim()     || 'N/A',
+            venue    : document.getElementById('meetVenue').value.trim()     || '',
+            date     : document.getElementById('meetDate').value             || '',
+            timeStart: document.getElementById('meetTimeStart').value        || '',
+            timeEnd  : document.getElementById('meetTimeEnd').value          || '',
+            chair    : document.getElementById('meetChair').value.trim()     || '',
+            dept     : document.getElementById('meetDept').value.trim()      || '',
         };
     }
 
@@ -240,10 +240,10 @@
         let msg = `MEETING MINUTES & ACTION TRACKER\n`;
         msg += `${'-'.repeat(40)}\n`;
         msg += `Meeting : ${h.title}\n`;
-        if (h.ref)   msg += `Ref No. : ${h.ref}\n`;
-        if (h.date)  msg += `Date    : ${h.date}`;
-        if (h.time)  msg += `  |  Time : ${h.time}`;
-        if (h.date || h.time) msg += '\n';
+        if (h.date)      msg += `Date    : ${h.date}\n`;
+        if (h.timeStart) msg += `Start   : ${h.timeStart}`;
+        if (h.timeEnd)   msg += `  |  End : ${h.timeEnd}`;
+        if (h.timeStart || h.timeEnd) msg += '\n';
         if (h.venue) msg += `Venue   : ${h.venue}\n`;
         if (h.chair) msg += `Chair   : ${h.chair}`;
         if (h.dept)  msg += `  |  Dept : ${h.dept}`;
@@ -281,8 +281,8 @@
         // ── Sheet 1: Meeting Minutes ──
         lines.push([q('MEETING MINUTES & ACTION TRACKER'),'','','','','',''].join(','));
         lines.push(['','','','','','',''].join(','));
-        lines.push([q('Meeting Title'), q(h.title), '', q('Meeting Reference No.'), q(h.ref),'',''].join(','));
-        lines.push([q('Date'), q(h.date), q(''), q('Time'), q(h.time),'',''].join(','));
+        lines.push([q('Meeting Title'), q(h.title), '','','','',''].join(','));
+        lines.push([q('Date'), q(h.date), q(''), q('Start Time'), q(h.timeStart), q('End Time'), q(h.timeEnd)].join(','));
         lines.push([q('Venue / Place'), q(h.venue),'','','','',''].join(','));
         lines.push([q('Chaired By'), q(h.chair), q(''), q('Department'), q(h.dept),'',''].join(','));
         lines.push([q('Attendees'), q(att.join(' | ')),'','','','',''].join(','));
@@ -337,4 +337,3 @@
 </script>
 </body>
 </html>
-
