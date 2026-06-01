@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Minutes & Action Tracker</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary:   #1B2E4B;
+            --accent:    #2F80C2;
+            --accent-lt: #EBF4FC;
+            --bg:        #F0F3F7;
+            --card:      #FFFFFF;
+            --border:    #DDE3EC;
+            --text:      #1E2A38;
+            --muted:     #5E6F83;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 16px; }
+        .container { max-width: 900px; margin: auto; background: var(--card); padding: 24px; border-radius: 10px; box-shadow: 0 2px 14px rgba(0,0,0,.09); }
+
+        /* Back */
+        .back-link { display: inline-block; margin-bottom: 14px; font-size: 13px; color: var(--muted); text-decoration: none; }
+        .back-link:hover { color: var(--primary); }
+
+        /* Title */
+        .page-badge { display: block; text-align: center; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+        h2 { text-align: center; color: var(--primary); margin: 0 0 22px; font-size: 20px; font-weight: 700; }
+
+        /* Section title */
+        .sec-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .09em; color: var(--primary); background: var(--accent-lt); border-left: 3px solid var(--accent); padding: 5px 12px; margin: 20px 0 10px; border-radius: 0 4px 4px 0; }
+
+        /* Header grid */
+        .hdr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
+        .hdr-grid.three { grid-template-columns: 2fr 1fr 1fr; }
+        .hdr-grid.full  { grid-template-columns: 1fr; }
+        .field { display: flex; flex-direction: column; gap: 3px; }
+        .field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        .field input, .field textarea, .field select {
+            padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 6px;
+            font-size: 13px; color: var(--text); background: #FAFBFC; font-family: inherit;
+            transition: border-color .15s;
+        }
+        .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent); background: #fff; }
+        .field textarea { resize: vertical; min-height: 52px; }
+
+        /* Attendees area */
+        .attendee-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+        .attendee-row  { display: flex; gap: 8px; align-items: center; }
+        .attendee-row input { flex: 1; padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text); background: #FAFBFC; }
+        .attendee-row input:focus { outline: none; border-color: var(--accent); background: #fff; }
+        .att-del { background: none; border: none; color: #c0392b; font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+        .att-del:hover { background: #FCEBEB; }
+        .add-att-btn { padding: 7px 16px; background: #f5f8fa; border: 1.5px dashed var(--accent); color: var(--primary); border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .add-att-btn:hover { background: var(--accent-lt); }
+
+        /* Action table */
+        .table-wrap { overflow-x: auto; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        thead th { background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 9px 10px; text-align: left; }
+        tbody tr:nth-child(even) { background: #f8f9fb; }
+        tbody td { border-bottom: 1px solid #eef1f4; padding: 5px 6px; vertical-align: middle; }
+        tbody td:first-child { text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; width: 36px; }
+        tbody td input, tbody td select, tbody td textarea {
+            width: 100%; padding: 5px 7px; border: 1.5px solid transparent; border-radius: 4px;
+            font-size: 12px; color: var(--text); background: transparent; font-family: inherit;
+            transition: border-color .15s, background .15s;
+        }
+        tbody td input:focus, tbody td select:focus, tbody td textarea:focus {
+            outline: none; border-color: var(--accent); background: #fff;
+        }
+        tbody td textarea { resize: none; min-height: 36px; }
+        .status-open       { color: #e67e22; font-weight: 600; }
+        .status-inprogress { color: #2980b9; font-weight: 600; }
+        .status-completed  { color: #27ae60; font-weight: 600; }
+        .status-deferred   { color: #95a5a6; font-weight: 600; }
+
+        /* Add row btn */
+        .add-row-btn { padding: 8px 18px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin-bottom: 4px; }
+        .add-row-btn:hover { background: #2368a2; }
+
+        /* Buttons */
+        .btn-copy { width: 100%; padding: 13px; background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 700; margin-bottom: 10px; letter-spacing: .02em; transition: background .15s; }
+        .btn-copy:hover { background: #2368a2; }
+        .btn-csv  { width: 100%; padding: 13px; background: var(--primary); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 700; letter-spacing: .02em; transition: background .15s; }
+        .btn-csv:hover { background: #12203a; }
+
+        #saveStatus { display: none; margin-top: 10px; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; text-align: center; }
+        #saveStatus.success { display: block; background: var(--accent-lt); color: var(--primary); border: 1px solid #7ab3e0; }
+        #saveStatus.error   { display: block; background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
+
+        @media (max-width: 600px) {
+            .hdr-grid, .hdr-grid.three { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="back-link">← Back to Dashboard</a>
+    <span class="page-badge">IW Pilot Plant</span>
+    <h2>Meeting Minutes &amp; Action Tracker</h2>
+
+    <!-- ── MEETING HEADER ── -->
+    <div class="sec-title">Meeting Details</div>
+    <div class="hdr-grid">
+        <div class="field"><label>Meeting Title</label><input type="text" id="meetTitle" placeholder="e.g. Weekly Production Review"></div>
+        <div class="field"><label>Meeting Reference No.</label><input type="text" id="meetRef" placeholder="e.g. MTG-2025-001"></div>
+    </div>
+    <div class="hdr-grid three">
+        <div class="field"><label>Venue / Place</label><input type="text" id="meetVenue" placeholder="e.g. Conference Room A"></div>
+        <div class="field"><label>Date</label><input type="date" id="meetDate"></div>
+        <div class="field"><label>Time</label><input type="time" id="meetTime"></div>
+    </div>
+    <div class="hdr-grid">
+        <div class="field"><label>Chaired By</label><input type="text" id="meetChair" placeholder="Name of chairperson"></div>
+        <div class="field"><label>Department</label><input type="text" id="meetDept" placeholder="e.g. Production"></div>
+    </div>
+
+    <!-- ── ATTENDEES ── -->
+    <div class="sec-title">Attendees</div>
+    <div class="attendee-list" id="attendeeList">
+        <div class="attendee-row">
+            <input type="text" placeholder="Name — Designation / Department">
+            <button class="att-del" onclick="delAttendee(this)" title="Remove">&#10005;</button>
+        </div>
+    </div>
+    <button class="add-att-btn" onclick="addAttendee()">+ Add Attendee</button>
+
+    <!-- ── ACTION ITEMS TABLE ── -->
+    <div class="sec-title">Action Items</div>
+    <div class="table-wrap">
+        <table id="actionTable">
+            <thead>
+                <tr>
+                    <th>Sr.</th>
+                    <th style="min-width:180px;">Agenda / Topic</th>
+                    <th style="min-width:140px;">Responsible Person</th>
+                    <th style="min-width:110px;">Target Date</th>
+                    <th style="min-width:110px;">Status</th>
+                    <th style="min-width:160px;">Action Remarks</th>
+                    <th style="min-width:160px;">Follow-up Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="actionBody"></tbody>
+        </table>
+    </div>
+    <button class="add-row-btn" onclick="addRow()">+ Add Row</button>
+
+    <div class="sec-title" style="margin-top:18px;">Export</div>
+    <button class="btn-copy" onclick="copyWhatsApp()">Copy Formatted Report (WhatsApp)</button>
+    <button class="btn-csv"  onclick="downloadCSV()">Download as Excel (CSV)</button>
+    <div id="saveStatus"></div>
+</div>
+
+<script>
+    // ── Attendees ──────────────────────────────────────────────
+    function addAttendee() {
+        const list = document.getElementById('attendeeList');
+        const row  = document.createElement('div');
+        row.className = 'attendee-row';
+        row.innerHTML = '<input type="text" placeholder="Name — Designation / Department"><button class="att-del" onclick="delAttendee(this)" title="Remove">&#10005;</button>';
+        list.appendChild(row);
+    }
+    function delAttendee(btn) {
+        const list = document.getElementById('attendeeList');
+        if (list.children.length > 1) btn.parentElement.remove();
+    }
+
+    // ── Table rows ─────────────────────────────────────────────
+    const STATUS_OPTS = ['', 'Open', 'In Progress', 'Completed', 'Deferred'];
+    let rowCount = 0;
+
+    function addRow() {
+        rowCount++;
+        const tbody = document.getElementById('actionBody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${rowCount}</td>
+            <td><input type="text" placeholder="Agenda / topic description"></td>
+            <td><input type="text" placeholder="Person name"></td>
+            <td><input type="date"></td>
+            <td>
+                <select onchange="colorStatus(this)">
+                    ${STATUS_OPTS.map(s => `<option>${s}</option>`).join('')}
+                </select>
+            </td>
+            <td><textarea placeholder="Action to be taken…" rows="2"></textarea></td>
+            <td><textarea placeholder="Follow-up notes…" rows="2"></textarea></td>`;
+        tbody.appendChild(tr);
+    }
+
+    function colorStatus(sel) {
+        sel.className = '';
+        const map = { 'Open':'status-open', 'In Progress':'status-inprogress', 'Completed':'status-completed', 'Deferred':'status-deferred' };
+        if (map[sel.value]) sel.className = map[sel.value];
+    }
+
+    // Seed 20 rows on load
+    for (let i = 0; i < 20; i++) addRow();
+
+    // ── Helpers ────────────────────────────────────────────────
+    function getHeader() {
+        return {
+            title  : document.getElementById('meetTitle').value.trim() || 'N/A',
+            ref    : document.getElementById('meetRef').value.trim()   || '',
+            venue  : document.getElementById('meetVenue').value.trim() || '',
+            date   : document.getElementById('meetDate').value         || '',
+            time   : document.getElementById('meetTime').value         || '',
+            chair  : document.getElementById('meetChair').value.trim() || '',
+            dept   : document.getElementById('meetDept').value.trim()  || '',
+        };
+    }
+
+    function getAttendees() {
+        return [...document.querySelectorAll('#attendeeList .attendee-row input')]
+            .map(i => i.value.trim()).filter(Boolean);
+    }
+
+    function getRows() {
+        return [...document.querySelectorAll('#actionBody tr')].map((tr, idx) => {
+            const cells = tr.querySelectorAll('input, select, textarea');
+            return {
+                sr      : idx + 1,
+                topic   : cells[0]?.value?.trim() || '',
+                person  : cells[1]?.value?.trim() || '',
+                date    : cells[2]?.value         || '',
+                status  : cells[3]?.value         || '',
+                action  : cells[4]?.value?.trim() || '',
+                followup: cells[5]?.value?.trim() || '',
+            };
+        });
+    }
+
+    // ── WhatsApp copy ──────────────────────────────────────────
+    function copyWhatsApp() {
+        const h   = getHeader();
+        const att = getAttendees();
+        const rows = getRows().filter(r => r.topic || r.person || r.status);
+
+        let msg = `MEETING MINUTES & ACTION TRACKER\n`;
+        msg += `${'-'.repeat(40)}\n`;
+        msg += `Meeting : ${h.title}\n`;
+        if (h.ref)   msg += `Ref No. : ${h.ref}\n`;
+        if (h.date)  msg += `Date    : ${h.date}`;
+        if (h.time)  msg += `  |  Time : ${h.time}`;
+        if (h.date || h.time) msg += '\n';
+        if (h.venue) msg += `Venue   : ${h.venue}\n`;
+        if (h.chair) msg += `Chair   : ${h.chair}`;
+        if (h.dept)  msg += `  |  Dept : ${h.dept}`;
+        if (h.chair || h.dept) msg += '\n';
+        if (att.length) {
+            msg += `\nATTENDEES (${att.length}):\n`;
+            att.forEach((a, i) => msg += ` ${i+1}. ${a}\n`);
+        }
+        if (rows.length) {
+            msg += `\nACTION ITEMS:\n`;
+            rows.forEach(r => {
+                msg += `${r.sr}. ${r.topic}\n`;
+                if (r.person) msg += `   Responsible : ${r.person}\n`;
+                if (r.date)   msg += `   Target Date : ${r.date}\n`;
+                if (r.status) msg += `   Status      : ${r.status}\n`;
+                if (r.action) msg += `   Remarks     : ${r.action}\n`;
+                if (r.followup) msg += `   Follow-up   : ${r.followup}\n`;
+            });
+        }
+        msg += `\nReported via IW Pilot Plant System`;
+
+        navigator.clipboard.writeText(msg).then(() => alert('Report copied! Paste in WhatsApp.'));
+    }
+
+    // ── CSV Download ───────────────────────────────────────────
+    function downloadCSV() {
+        const status = document.getElementById('saveStatus');
+        const h   = getHeader();
+        const att = getAttendees();
+        const rows = getRows();
+        const q  = v => `"${String(v||'').replace(/"/g,'""').replace(/\n/g,' ')}"`;
+
+        const lines = [];
+
+        // ── Sheet 1: Meeting Minutes ──
+        lines.push([q('MEETING MINUTES & ACTION TRACKER'),'','','','','',''].join(','));
+        lines.push(['','','','','','',''].join(','));
+        lines.push([q('Meeting Title'), q(h.title), '', q('Meeting Reference No.'), q(h.ref),'',''].join(','));
+        lines.push([q('Date'), q(h.date), q(''), q('Time'), q(h.time),'',''].join(','));
+        lines.push([q('Venue / Place'), q(h.venue),'','','','',''].join(','));
+        lines.push([q('Chaired By'), q(h.chair), q(''), q('Department'), q(h.dept),'',''].join(','));
+        lines.push([q('Attendees'), q(att.join(' | ')),'','','','',''].join(','));
+        lines.push(['','','','','','',''].join(','));
+
+        // Column headers
+        lines.push([q('Sr.'), q('Agenda / Topic'), q('Responsible Person'), q('Target Date'), q('Status'), q('Action Remarks'), q('Follow-up Remarks')].join(','));
+
+        // Data rows
+        rows.forEach(r => {
+            lines.push([q(r.sr), q(r.topic), q(r.person), q(r.date), q(r.status), q(r.action), q(r.followup)].join(','));
+        });
+
+        lines.push(['','','','','','',''].join(','));
+        lines.push([q('Note: Please update Status column as — Open | In Progress | Completed | Deferred'),'','','','','',''].join(','));
+
+        // ── Sheet 2 sim: Pending Tasks ──
+        lines.push(['','','','','','',''].join(','));
+        lines.push(['','','','','','',''].join(','));
+        lines.push([q('PENDING TASKS — AUTO TRACKER'),'','','','','',''].join(','));
+        lines.push([q('This section displays all tasks where Status is Open or In Progress.'),'','','','','',''].join(','));
+        lines.push(['','','','','','',''].join(','));
+        lines.push([q('Sr.'), q('Agenda / Topic'), q('Responsible Person'), q('Target Date'), q('Status'), q('Action Remarks'), q('Follow-up Remarks')].join(','));
+
+        let pendingSr = 1;
+        rows.forEach(r => {
+            if (r.status === 'Open' || r.status === 'In Progress') {
+                lines.push([q(pendingSr++), q(r.topic), q(r.person), q(r.date), q(r.status), q(r.action), q(r.followup)].join(','));
+            }
+        });
+        if (pendingSr === 1) lines.push([q('No pending tasks found.'), '','','','','',''].join(','));
+
+        lines.push(['','','','','','',''].join(','));
+        lines.push([q('Note: This sheet refreshes automatically. Enter data in Meeting Log sheet only.'),'','','','','',''].join(','));
+
+        // Download
+        const csv  = lines.join('\n');
+        const date = new Date().toLocaleDateString('en-GB').replace(/\//g,'-');
+        const filename = `MeetingMinutes_${h.title.replace(/[^a-zA-Z0-9]/g,'_').substring(0,30)}_${date}.csv`;
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = filename;
+        document.body.appendChild(link); link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        status.className = 'success';
+        status.textContent = 'Downloaded: ' + filename;
+    }
+</script>
+</body>
+</html>
+
