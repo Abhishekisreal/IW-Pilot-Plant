@@ -104,7 +104,7 @@
     <div class="sec-title">Meeting Details</div>
     <div class="hdr-grid">
         <div class="field"><label>Meeting Title</label><input type="text" id="meetTitle" placeholder="e.g. Weekly Production Review"></div>
-        <div class="field"><label>Meeting Reference No.</label><input type="text" id="meetRef" placeholder="e.g. MTG-2025-001"></div>
+
     </div>
     <div class="hdr-grid three">
         <div class="field"><label>Venue / Place</label><input type="text" id="meetVenue" placeholder="e.g. Conference Room A"></div>
@@ -195,8 +195,8 @@
         if (map[sel.value]) sel.className = map[sel.value];
     }
 
-    // Seed 20 rows on load
-    for (let i = 0; i < 20; i++) addRow();
+    // Seed 1 row at once
+    addRow();
 
     // ── Helpers ────────────────────────────────────────────────
     function getHeader() {
